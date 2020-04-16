@@ -35,7 +35,8 @@ return [
     |
     | If you would like to add some other info to the name, you can add it here.
     | Version will only be added if the table_type config is set to versionify.
-    | Uppername is the name after being sanitized by
+	| Uppername is the name after being sanitized by. Do not place empty spaces
+	| in the file name.
     |
     | timestamp     : {timestamp}
     | name          : {name}
@@ -44,7 +45,7 @@ return [
     |
     */
 
-    "default_table_namestructure" => "Table_{studly}",
+    "default_table_namestructure" => "{timestamp}_{studly}",
 
     /*
     |--------------------------------------------------------------------------
@@ -59,6 +60,8 @@ return [
     "default_database" => [
         "string_size"   => 199,
         "integer_size"  => 255,
-        "binary_size"   => 255,
+		"binary_size"   => 255,
+		"id_type"		=> "integer",
+		"sid_size"		=> 11,
     ]
 ];

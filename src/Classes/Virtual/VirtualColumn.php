@@ -150,7 +150,7 @@ class VirtualColumn implements ToRawQuery, ComparableVirtual, Jsonable, Arrayabl
         $name       = $this->columnname;
         $type       = $this->buildType();
         $increment  = isset($this->attributes->extra)? $this->attributes->extra:"";
-        $nullable   = isset($this->attributes->nullable) && $this->attributes->nullable === true? $this->attributes->nullable:"NOT NULL";
+        $nullable   = isset($this->attributes->nullable) && $this->attributes->nullable === true? "NULL":"NOT NULL";
         $primary    = isset($this->attributes->key) && $this->attributes->key == "PRI"? "PRIMARY KEY":"";
         $default    = isset($this->attributes->default)? ("DEFAULT '".$this->attributes->default."'"):"";
 

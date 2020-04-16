@@ -42,6 +42,13 @@ class ConcreteTable extends VirtualTable {
         return $column;
     }
 
+    public function bigInteger ($name, $length = null) {
+        $length             = is_null($length) ? config("lohm.default_database.integer_size"):$length;
+        $column             = new ConcreteColumn($name, ["type" => "BIGINT", "length" => $length], "", $this->tablename);
+        $this->_columns[]   = $column;
+        return $column;
+    }
+
     public function binary ($name, $length = null) {
         $length             = is_null($length) ? config("lohm.default_database.binary_size"):$length;
         $column             = new ConcreteColumn($name, ["type" => "binary", "length" => $length], "", $this->tablename);
@@ -66,21 +73,25 @@ class ConcreteTable extends VirtualTable {
     //-------------------------------------------------
 
     public function id ($name = "id") {
-        $column             = new ConcreteColumn($name, ["type" => "integer", "extra" => "unsigned", "key" => "PRI"], "", $this->tablename);
-        $this->_columns[]   = $column;
-        return $column;
+		if (config("lohm.default_database.id_type") == "integer")
+			return $this->bigInteger($name)->increments()->primary();
+		else
+			return $this->sid($name);
     }
 
     public function sid ($name = "sid") {
-        $column             = new ConcreteColumn($name, ["type" => "varchar", "length" => 11, "key" => "PRI"], "", $this->tablename);
-        $this->_columns[]   = $column;
-        return $column;
+		return $this->string($name, config("lohm.default_database.sid_size"))->primary();
     }
 
     public function uuid ($name = "uuid") {
-        $column             = new ConcreteColumn($name, ["type" => "varchar", "length" => 36, "key" => "PRI"], "", $this->tablename);
-        $this->_columns[]   = $column;
-        return $column;
+		return $this->string($name, 36)->primary();
+    }
+
+    public function morphs ($name, $sid = false) {
+        $this->string($name."_type");
+
+        if ($sid)   $this->string($name."_id");
+        else        $this->bigInteger($name."_id");
     }
 
     //-------------------------------------------------

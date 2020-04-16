@@ -11,13 +11,15 @@ class CreateNewTable {
         $name       = class_basename($arguments["classname"]);
         $tablepath  = preg_replace("/".$name."/", "", $arguments["classname"]);
         $path       = config("lohm.default_table_directory").$tablepath;
-        $filename   = NameBuilder::build($name);
+		$filename   = NameBuilder::build($name);
+		$classname 	= NameBuilder::build($name, true);
+		$tablename 	= is_null($arguments["name"]) ? strtolower($name) : $arguments["name"];
         $stub       = CreateNewTable::getStub($options["template"], $command);
 
         //Create stub
         $stub = StubBuilder::build($stub, [
-            "classname" => $filename,
-            "tablename" => is_null($arguments["name"]) ? strtolower($name) : $arguments["name"],
+            "classname" => $classname,
+            "tablename" => $tablename,
         ]);
 
         //Create path

@@ -31,7 +31,7 @@ class ConcreteColumn extends VirtualColumn {
     }
 
     public function nullable ($bool = true) {
-        $this->attributes->nullable = $bool ? "NULL":"NOT NULL";
+        $this->attributes->nullable = $bool;
 
         //Always return self for concatenation
         return $this;
@@ -46,6 +46,13 @@ class ConcreteColumn extends VirtualColumn {
 
     public function primary () {
         $this->attributes->key = "PRI";
+
+        //Always return self for concatenation
+        return $this;
+    }
+
+    public function increments () {
+        $this->attributes->extra = "AUTO_INCREMENT";
 
         //Always return self for concatenation
         return $this;

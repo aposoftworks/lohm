@@ -78,13 +78,16 @@ class LOHM {
 
         //Generate name
         $classnamewithextension = class_basename($filepath);
-        $classname              = preg_replace("/\.php/", "", $classnamewithextension);
 
         //Actually require
-        require $filepath;
+		require $filepath;
+
+		//Get class name
+		$classes 	= get_declared_classes();
+		$class 		= end($classes);
 
         //Instanceit
-        $class = new $classname();
+        $class = new $class();
 
         if($method === "up")
             $class->up();
