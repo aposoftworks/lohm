@@ -63,5 +63,6 @@ return [
 		"binary_size"   => 255,
 		"id_type"		=> "integer",
 		"sid_size"		=> 11,
+		"id_size"		=> 20,
     ]
 ];

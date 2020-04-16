@@ -1,7 +1,7 @@
 <?php
 
-use Aposoftworks\LOHM\Classes\Facades\LOHM;
-use Aposoftworks\LOHM\Classes\Concrete\ConcreteTable as Table;
+use Aposoftworks\LOHM\Classes\Facades\LOHM 				as Schema;
+use Aposoftworks\LOHM\Classes\Concrete\ConcreteTable 	as Blueprint;
 
 class {{ $classname }} {
     /**
@@ -10,8 +10,10 @@ class {{ $classname }} {
      * @return void
      */
     public function up () {
-        LOHM::table('{{ $tablename }}', function (Table $table) {
+        Schema::table('{{ $tablename }}', function (Blueprint $table) {
+			$table->id();
 
+			$table->timestamps();
         });
     }
 
@@ -21,6 +23,6 @@ class {{ $classname }} {
      * @return void
      */
     public function down() {
-        LOHM::dropTable('{{ $tablename }}');
+        Schema::dropTable('{{ $tablename }}');
     }
 }

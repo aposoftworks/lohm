@@ -83,7 +83,7 @@ class DatabaseHelper {
     //-------------------------------------------------
 
     public static function columnEquals (VirtualColumn $obj1, VirtualColumn $obj2) {
-        return $obj1->toQuery() === $obj2->toQuery();
+        return strtoupper($obj1->toQuery()) === strtoupper($obj2->toQuery());
     }
 
     public static function changesNeeded (VirtualTable $current, VirtualTable $needed) {
@@ -96,15 +96,18 @@ class DatabaseHelper {
             //Column already exists
             if (key_exists($name, $columns_current_data)) {
                 //Column needs type change
-                if (
-                    $column["column"]->toQuery() != $columns_current_data[$name]["column"]->toQuery() ||
-                    $column["order"] !== $columns_current_data[$name]["order"]
-                ) {
+                if (!DatabaseHelper::columnEquals($column["column"], $columns_current_data[$name]["column"])) {
                     //Add to the start of the table
-                    if ($column["order"] == 0) $queries[] = " MODIFY ".$column["column"]->toQuery()." FIRST ";
+                    if ($column["order"] == 0) $queries[] = " MODIFY ".$column["column"]->toQuery();
                     //Add after a column
-                    else $queries[] = " MODIFY ".$column["column"]->toQuery()." AFTER ".$columns_needed[$column["order"] - 1]->name()." ";
-                }
+                    else $queries[] = " MODIFY ".$column["column"]->toQuery();
+				}
+				if ($column["order"] !== $columns_current_data[$name]["order"]) {
+                    //Add to the start of the table
+                    if ($column["order"] == 0) $queries[] = " MODIFY ".$column["column"]->name()." FIRST ";
+                    //Add after a column
+                    else $queries[] = " MODIFY ".$column["column"]->name()." AFTER ".$columns_needed[$column["order"] - 1]->name()." ";
+				}
             }
             //Add column to table
             else {

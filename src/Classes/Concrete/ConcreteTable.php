@@ -23,6 +23,13 @@ class ConcreteTable extends VirtualTable {
         return $column;
     }
 
+    public function char ($name, $length = null) {
+        $length             = is_null($length) ? config("lohm.default_database.string_size"):$length;
+        $column             = new ConcreteColumn($name, ["type" => "char", "length" => $length], "", $this->tablename);
+        $this->_columns[]   = $column;
+        return $column;
+    }
+
     public function text ($name, $length = null) {
         $column             = new ConcreteColumn($name, ["type" => "text", "length" => $length], "", $this->tablename);
         $this->_columns[]   = $column;
@@ -73,10 +80,10 @@ class ConcreteTable extends VirtualTable {
     //-------------------------------------------------
 
     public function id ($name = "id") {
-		if (config("lohm.default_database.id_type") == "integer")
-			return $this->bigInteger($name)->increments()->primary();
-		else
+		if (config("lohm.default_database.id_type") == "string")
 			return $this->sid($name);
+		else
+			return $this->bigInteger($name, config("lohm.default_database.id_size"))->increments()->primary()->unsigned();
     }
 
     public function sid ($name = "sid") {

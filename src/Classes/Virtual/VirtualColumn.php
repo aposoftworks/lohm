@@ -152,10 +152,11 @@ class VirtualColumn implements ToRawQuery, ComparableVirtual, Jsonable, Arrayabl
         $increment  = isset($this->attributes->extra)? $this->attributes->extra:"";
         $nullable   = isset($this->attributes->nullable) && $this->attributes->nullable === true? "NULL":"NOT NULL";
         $primary    = isset($this->attributes->key) && $this->attributes->key == "PRI"? "PRIMARY KEY":"";
-        $default    = isset($this->attributes->default)? ("DEFAULT '".$this->attributes->default."'"):"";
+		$default    = isset($this->attributes->default)? ("DEFAULT '".$this->attributes->default."'"):"";
+		$unsigned 	= isset($this->attributes->usnigned)? "UNSIGNED":"";
 
         //Sanitization
-        $raw = implode(" ", [$name, $type, $increment, $nullable, $default, $primary]);
+        $raw = implode(" ", [$name, $type, $increment, $nullable, $default, $primary, $unsigned]);
         $raw = preg_replace("/\s+/", " ", $raw);
         $raw = trim($raw);
 

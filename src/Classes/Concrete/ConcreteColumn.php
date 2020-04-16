@@ -59,7 +59,10 @@ class ConcreteColumn extends VirtualColumn {
     }
 
     public function unsigned () {
+		$this->attributes->unsigned = true;
 
+        //Always return self for concatenation
+        return $this;
     }
 
     //-------------------------------------------------
