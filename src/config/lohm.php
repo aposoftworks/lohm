@@ -49,6 +49,35 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Enable soft deletes
+    |--------------------------------------------------------------------------
+    |
+    | Will disable inserting of the soft deletes fields
+    |
+	*/
+
+	"soft_deletes" => true,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Default naming convention
+    |--------------------------------------------------------------------------
+    |
+    | Default names if you don't overwrite them when calling  the function
+    |
+	*/
+
+	"default_naming" => [
+		"date_created" 	=> "created_at",
+		"date_updated" 	=> "updated_at",
+		"date_deleted" 	=> "deleted_at",
+		"id"			=> "id",
+		"sid"			=> "sid",
+		"uuid"			=> "uuid",
+	],
+
+    /*
+    |--------------------------------------------------------------------------
     | Default database values
     |--------------------------------------------------------------------------
     |

@@ -79,35 +79,59 @@ class ConcreteTable extends VirtualTable {
     // Column helpers
     //-------------------------------------------------
 
-    public function id ($name = "id") {
+    public function morphs ($name, $sid = false) {
+        $this->string($name."_type");
+
+        if ($sid)   $this->string($name."_id");
+        else        $this->bigInteger($name."_id");
+	}
+
+	public function foreign ($name, $tablename) {
+		if (config("lohm.default_database.id_type") == "string")
+			return $this->string($name, config("lohm.default_database.sid_size"))->foreign($tablename);
+		else
+			return $this->bigInteger($name, config("lohm.default_database.id_size"))->unsigned()->foreign($tablename);
+	}
+
+    //-------------------------------------------------
+    // Column helpers - primary
+    //-------------------------------------------------
+
+    public function id ($name = null) {
+		$name = is_null($name) ? config("lohm.default_naming.id") : $name;
+
 		if (config("lohm.default_database.id_type") == "string")
 			return $this->sid($name);
 		else
 			return $this->bigInteger($name, config("lohm.default_database.id_size"))->increments()->primary()->unsigned();
     }
 
-    public function sid ($name = "sid") {
+    public function sid ($name = null) {
+		$name = is_null($name) ? config("lohm.default_naming.sid") : $name;
+
 		return $this->string($name, config("lohm.default_database.sid_size"))->primary();
     }
 
-    public function uuid ($name = "uuid") {
+    public function uuid ($name = null) {
+		$name = is_null($name) ? config("lohm.default_naming.uuid") : $name;
+
 		return $this->string($name, 36)->primary();
-    }
-
-    public function morphs ($name, $sid = false) {
-        $this->string($name."_type");
-
-        if ($sid)   $this->string($name."_id");
-        else        $this->bigInteger($name."_id");
     }
 
     //-------------------------------------------------
     // Column collections
     //-------------------------------------------------
 
-    public function timestamps ($createname = "date_created", $updatename = "date_updated", $deletename = "date_deleted") {
-        $this->timestamp($createname);
-        $this->timestamp($updatename)->nullable();
-        $this->timestamp($deletename)->nullable();
+    public function timestamps ($createname = null, $updatename = null, $deletename = null) {
+		$name_create = is_null($createname) ? config("lohm.default_naming.date_created") : $createname;
+		$name_update = is_null($createname) ? config("lohm.default_naming.date_created") : $updatename;
+		$name_delete = is_null($createname) ? config("lohm.default_naming.date_created") : $deletename;
+
+        $this->timestamp($name_create);
+		$this->timestamp($name_update)->nullable();
+
+		//Optional field
+		if (config("lohm.soft_deletes") === true || !is_null($deletename))
+        	$this->timestamp($name_delete)->nullable();
     }
 }
