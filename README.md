@@ -71,17 +71,8 @@ Will clear the database using our custom migrations
 ## Custom stubs
 With LOHM you can write custom migrations to use as templates when creating new ones, after publishing the default one (using: `php artisan vendor:publish --tag=lohm-stub`), you change "default" with the name you want to use and you are good to go. For example, you can use `php artisan make:table User --template=user` to use the `lohm.user.php` stub.
 
-## TODO
-[ ] Add support for multiple indexes
+## Supports
+We currently support those database types, we are looking for pull requests to help adding support for different databases
 
-[x] Add diff command
-
-[x] Add support for removing fields that are not necessary anymore
-
-[x] Add sync functionality
-
-[x] Add support for indexes
-
-[x] Add support for foreign keys
-
-[x] Add analyze command
+- MySQL
+- SQLite (partial)

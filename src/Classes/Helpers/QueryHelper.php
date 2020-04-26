@@ -6,7 +6,15 @@ use Illuminate\Support\Facades\DB;
 
 class QueryHelper {
     public static function checkTable ($tablename) {
-        return "SELECT table_schema FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = '".$tablename."';";
+		$type = config("database.connections.".config("database.default").".driver");
+
+		switch ($type) {
+			case "sqlite":
+				return "SELECT name FROM sqlite_master WHERE type='table' AND name= '".$tablename."';";
+			default:
+			case "mysql":
+				return "SELECT table_schema FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = '".$tablename."';";
+		}
     }
 
     public static function checkConstraint ($constraintname, $tablename) {
