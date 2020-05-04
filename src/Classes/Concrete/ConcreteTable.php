@@ -124,8 +124,8 @@ class ConcreteTable extends VirtualTable {
 
     public function timestamps ($createname = null, $updatename = null, $deletename = null) {
 		$name_create = is_null($createname) ? config("lohm.default_naming.date_created") : $createname;
-		$name_update = is_null($createname) ? config("lohm.default_naming.date_updated") : $updatename;
-		$name_delete = is_null($createname) ? config("lohm.default_naming.date_deleted") : $deletename;
+		$name_update = is_null($updatename) ? config("lohm.default_naming.date_updated") : $updatename;
+		$name_delete = is_null($deletename) ? config("lohm.default_naming.date_deleted") : $deletename;
 
         $this->timestamp($name_create);
 		$this->timestamp($name_update)->nullable();
