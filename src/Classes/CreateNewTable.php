@@ -40,7 +40,7 @@ class CreateNewTable {
     }
 
     private static function getStub ($name = "default", $command) {
-        $name = "lohm.".$name.".php";
+        $name = "lohm.".$name.".stub";
 
         //Try user application resource
         if (is_file(resource_path("/stubs/".$name))) {
@@ -53,7 +53,7 @@ class CreateNewTable {
         //Go for the default
         else {
             $command->warn("Template not found, using default stub");
-            $path = __DIR__."/../Stubs/lohm.default.php";
+            $path = __DIR__."/../Stubs/lohm.default.stub";
         }
 
         return file_get_contents($path);

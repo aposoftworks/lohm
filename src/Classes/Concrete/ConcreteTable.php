@@ -79,11 +79,17 @@ class ConcreteTable extends VirtualTable {
     // Column helpers
     //-------------------------------------------------
 
-    public function morphs ($name, $sid = false) {
+    public function morphs ($name, $sid = null) {
         $this->string($name."_type");
 
-        if ($sid)   $this->string($name."_id");
-        else        $this->bigInteger($name."_id");
+		if (is_null($sid))	{
+			if (config("lohm.default_database.id_type") == "string")
+				$this->string($name."_id", config("lohm.default_database.sid_size"));
+			else
+				$this->bigInteger($name."_id", config("lohm.default_database.id_size"));
+		}
+        else if ($sid)   	$this->string($name."_id", config("lohm.default_database.sid_size"));
+        else        		$this->bigInteger($name."_id", config("lohm.default_database.id_size"));
 	}
 
 	public function foreign ($name, $tablename) {

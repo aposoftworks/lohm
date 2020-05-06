@@ -24,6 +24,13 @@ class ConcreteColumn extends VirtualColumn {
     }
 
     public function default ($newdefault = null) {
+		//Morph into integer in case of boolean
+		if ($newdefault === true)
+			$newdefault = 1;
+		else if ($newdefault === false)
+			$newdefault = 0;
+
+		//Set the actual value
         $this->attributes->default = $newdefault;
 
         //Always return self for concatenation
