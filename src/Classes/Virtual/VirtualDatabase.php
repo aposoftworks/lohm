@@ -3,6 +3,8 @@
 namespace Aposoftworks\LOHM\Classes\Virtual;
 
 //Interfaces
+
+use Aposoftworks\LOHM\Classes\SyntaxLibrary;
 use Illuminate\Contracts\Support\Jsonable;
 use Aposoftworks\LOHM\Contracts\ToRawQuery;
 use Illuminate\Contracts\Support\Arrayable;
@@ -57,7 +59,7 @@ class VirtualDatabase implements ToRawQuery, ComparableVirtual, Jsonable, Arraya
     //-------------------------------------------------
 
     public static function fromDatabase ($databasename) {
-        $tablesraw      = collect(DB::select("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_SCHEMA='".$databasename."'"));
+        $tablesraw      = collect(DB::select(SyntaxLibrary::getTables()));
         $tablesvirtual  = [];
 
         //We will consider a empty database as invalid
@@ -65,9 +67,10 @@ class VirtualDatabase implements ToRawQuery, ComparableVirtual, Jsonable, Arraya
             return new VirtualDatabase($databasename, [], false);
         }
 
-        //Fetch all tables
+		//Fetch all tables
         for ($i = 0; $i < $tablesraw->count(); $i++) {
-            $tablesvirtual[] = VirtualTable::fromDatabase($databasename, $tablesraw[$i]->TABLE_NAME);
+			$values = array_values((array)$tablesraw[$i]);
+            $tablesvirtual[] = VirtualTable::fromDatabase($databasename, $values[0]);
         }
 
         return new VirtualDatabase($databasename, $tablesvirtual);
@@ -100,7 +103,21 @@ class VirtualDatabase implements ToRawQuery, ComparableVirtual, Jsonable, Arraya
     }
 
     public function toLateQuery () {
+        //Prepare columns
+        $queryTables = [];
 
+        for ($i = 0; $i < count($this->_tables); $i++) {
+            $queryTables[] = $this->_tables[$i]->toLateQuery();
+        }
+
+        //Prepare general statement
+        $raw = implode(" ", $queryTables);
+
+        //Sanitize
+        $raw = preg_replace("/\s+/", " ", $raw);
+        $raw = trim($raw);
+
+        return $raw;
     }
 
     public function toArray () {

@@ -61,7 +61,7 @@ class DiffCommand extends Command {
         $queues = LOHM::queues();
 
         for ($i = 0; $i < count($queues); $i++) {
-            DatabaseHelper::diffTable($this, $queues[$i]["table"], "");
+            DatabaseHelper::diffTable($this, $queues[$i]["table"]);
         }
     }
 }

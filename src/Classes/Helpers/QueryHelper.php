@@ -31,7 +31,7 @@ class QueryHelper {
         for ($i = 0; $i < count($constraints); $i++) {
             $constraint = preg_replace("/".$database."\//","", $constraints[$i]->ID);
 
-            DB::connection(config("database.default"))->statement("ALTER TABLE ".$table." DROP FOREIGN KEY ".$constraint);
+			static::dropConstraint($table, $constraint);
         }
     }
 
@@ -45,8 +45,16 @@ class QueryHelper {
             for ($i = 0; $i < count($indexes); $i++) {
                 $constraint = $indexes[$i]->NAME;
 
-                DB::connection(config("database.default"))->statement("ALTER TABLE ".$table." DROP INDEX ".$constraint);
+				static::dropIndex($table, $constraint);
             }
         }
+    }
+
+    public static function dropConstraint ($table, $constraintname) {
+        DB::connection(config("database.default"))->statement("ALTER TABLE ".$table." DROP FOREIGN KEY ".$constraintname);
+    }
+
+    public static function dropIndex ($table, $indexname) {
+		DB::connection(config("database.default"))->statement("ALTER TABLE ".$table." DROP INDEX ".$indexname);
     }
 }

@@ -54,7 +54,7 @@ class LOHM {
     }
 
     public function dropTable ($name) {
-        $this->_latequeues[] = ["conn" => $this->connection, "query" => "DROP TABLE IF EXISTS ".$name, "type" => "alter"];
+        $this->_latequeues[] = ["conn" => $this->connection, "table" => $name, "type" => "droptable"];
     }
 
     public function conn ($name) {
@@ -75,9 +75,6 @@ class LOHM {
 
     public function queue ($filepath, $method = "up") {
         $this->method = $method;
-
-        //Generate name
-        $classnamewithextension = class_basename($filepath);
 
         //Actually require
 		require $filepath;
@@ -100,21 +97,21 @@ class LOHM {
         $queues = [];
 
         for ($i = 0; $i < count($this->_queues); $i++) {
-            $queue = $this->_queues[$i];
+            $data = $this->_queues[$i];
 
-            if (trim($queue["query"]) != "") {
-                $queues[] = function () use ($queue) {
-                    return $this->migrationRun($queue);
+            if (trim($data["query"]) != "") {
+                $queues[] = function () use ($data) {
+                    return $this->migrationRun($data);
                 };
             }
         }
 
         for ($i = 0; $i < count($this->_latequeues); $i++) {
-            $queue = $this->_latequeues[$i];
+            $data = $this->_latequeues[$i];
 
-            if (trim($queue["query"]) != "") {
-                $queues[] = function () use ($queue) {
-                    return $this->migrationRun($queue);
+            if (trim($data["query"]) != "") {
+                $queues[] = function () use ($data) {
+                    return $this->migrationRun($data);
                 };
             }
         }
@@ -130,11 +127,6 @@ class LOHM {
         $tablename = $data["table"]->name();
 
         if ($data["type"] == "alter") {
-            //Reset all indexes and foreign keys
-            if (LOHM::conn($data["conn"])->existsTable($tablename)) {
-                QueryHelper::dropConstraints($tablename);
-                QueryHelper::dropIndexes($tablename);
-            }
 
             //Insert all of it
             DB::connection($data["conn"])->statement($data["query"]);
@@ -145,7 +137,13 @@ class LOHM {
             if (LOHM::conn($data["conn"])->existsTable($tablename)) {
                 $connection     = config("database.connections.".$data["conn"].".database");
                 $currenttable   = VirtualTable::fromDatabase($connection, $tablename);
-                $changes        = DatabaseHelper::changesNeeded($currenttable, $data["table"]);
+				$changes        = DatabaseHelper::changesNeeded($currenttable, $data["table"]);
+
+				//Reset all indexes and foreign keys
+				if (LOHM::conn($data["conn"])->existsTable($tablename)) {
+					QueryHelper::dropConstraints($tablename);
+					QueryHelper::dropIndexes($tablename);
+				}
 
                 if ($changes === "")
                     return true;
@@ -162,16 +160,16 @@ class LOHM {
         }
     }
 
-    private function enqueuer ($queue, $table, $queryType = "_queues") {
-        $type = $queryType == "_queues" ? "table":"alter";
+    private function enqueuer ($queue, $table, $queryType) {
+		$query = ["conn" => $this->connection, "table" => $table, "type" => ($queryType === "_queues" ? "create":"alter")];
 
         if (is_array($queue)) {
             for ($i = 0; $i < count($queue); $i++) {
-                $this->$queryType[] = ["conn" => $this->connection, "query" => $queue[$i], "table" => $table, "type" => $type];
+                $this->$queryType[] = $query + ["query" => $queue[$i]];
             }
         }
         else {
-            $this->$queryType[] = ["conn" => $this->connection, "query" => $queue, "table" => $table, "type" => $type];
+            $this->$queryType[] = $query + ["query" => $queue];
         }
     }
 }

@@ -25,7 +25,7 @@ class DatabaseHelper {
 
         //Check new columns
         for ($i = 0; $i < count($fields); $i++) {
-            DatabaseHelper::diffColumn($command, $fields[$i], VirtualColumn::fromDatabase($table->database(), $table->name(), $fields[$i]->name()), $prefix."  ", $all);
+            static::diffColumn($command, $fields[$i], VirtualColumn::fromDatabase($table->database(), $table->name(), $fields[$i]->name()), $prefix."  ", $all);
         }
 
         //Check removed columns
@@ -35,14 +35,16 @@ class DatabaseHelper {
         for ($i = 0; $i < count($deleted_fields); $i++) {
             if (!key_exists($deleted_fields[$i]->name(), $data_fields))
                 $command->line($prefix."  <fg=red>COLUMN ".$deleted_fields[$i]->toQuery()."</>");
-        }
+		}
+
+		$command->line("");
     }
 
     public static function diffColumn (Command $command, VirtualColumn $column_new, VirtualColumn $column_current, string $prefix = "", $all = true) {
         if (!$column_current->isValid())
             $command->line($prefix."<fg=green>COLUMN ".$column_new->toQuery()."</>");
         else {
-            if (DatabaseHelper::columnEquals($column_new, $column_current)) {
+            if (static::columnEquals($column_new, $column_current)) {
                 if ($all) $command->line($prefix."<fg=default>COLUMN ".$column_new->toQuery()."</>");
             }
             else
@@ -60,7 +62,7 @@ class DatabaseHelper {
         $command->line("<fg=cyan>DATABASE</> ".$database->name());
 
         for ($i = 0; $i < count($tables); $i++) {
-            DatabaseHelper::printTable($command, $tables[$i], "  ");
+            static::printTable($command, $tables[$i], "  ");
         }
     }
 
@@ -70,7 +72,7 @@ class DatabaseHelper {
         $command->line($prefix."<fg=magenta>TABLE</> ".$table->name());
 
         for ($i = 0; $i < count($fields); $i++) {
-            DatabaseHelper::printColumn($command, $fields[$i], $prefix."  ");
+            static::printColumn($command, $fields[$i], $prefix."  ");
         }
     }
 
@@ -83,7 +85,26 @@ class DatabaseHelper {
     //-------------------------------------------------
 
     public static function columnEquals (VirtualColumn $obj1, VirtualColumn $obj2) {
-        return strtoupper($obj1->toQuery()) === strtoupper($obj2->toQuery());
+		//Column essential diff
+		if (strtoupper($obj1->toQuery()) !== strtoupper($obj2->toQuery()))
+			return false;
+
+		//Get index data
+		$obj1late = $obj1->toLateQuery();
+		$obj2late = $obj2->toLateQuery();
+
+		//Indexing diff
+		if (count($obj1late) !== count($obj2late))
+			return false;
+
+		//Loop all indexes
+		for ($i = 0; $i < count($obj1late); $i++) {
+			if (strtoupper($obj1late[$i]) !== strtoupper($obj2late[$i]))
+				return false;
+		}
+
+		//Object match
+        return true;
     }
 
     public static function changesNeeded (VirtualTable $current, VirtualTable $needed) {
@@ -96,7 +117,7 @@ class DatabaseHelper {
             //Column already exists
             if (key_exists($name, $columns_current_data)) {
                 //Column needs type change
-                if (!DatabaseHelper::columnEquals($column["column"], $columns_current_data[$name]["column"])) {
+                if (!static::columnEquals($column["column"], $columns_current_data[$name]["column"])) {
                     //Add to the start of the table
                     if ($column["order"] == 0) $queries[] = " MODIFY ".$column["column"]->toQuery();
                     //Add after a column

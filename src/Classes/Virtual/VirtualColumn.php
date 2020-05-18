@@ -3,13 +3,16 @@
 namespace Aposoftworks\LOHM\Classes\Virtual;
 
 //Interfaces
+
+use Aposoftworks\LOHM\Classes\SyntaxLibrary;
 use Illuminate\Contracts\Support\Jsonable;
 use Illuminate\Contracts\Support\Arrayable;
 use Aposoftworks\LOHM\Contracts\ToRawQuery;
 use Aposoftworks\LOHM\Contracts\ComparableVirtual;
-
+use Exception;
 //Facades
 use Illuminate\Support\Facades\DB;
+use stdClass;
 
 class VirtualColumn implements ToRawQuery, ComparableVirtual, Jsonable, Arrayable {
 
@@ -47,31 +50,35 @@ class VirtualColumn implements ToRawQuery, ComparableVirtual, Jsonable, Arrayabl
 
     public function name () {
         return $this->columnname;
+	}
+
+    public function table () {
+        return $this->tablename;
+    }
+
+    public function attributes () {
+        return $this->attributes;
     }
 
     //-------------------------------------------------
     // Static methods
     //-------------------------------------------------
 
-    public static function extra ($extra) {
-        switch ($extra) {
-            case  "auto_increment":
-                return "AUTO_INCREMENT";
-            default:
-                return "";
-        }
-    }
-
     public static function sanitize ($column) {
         //Sort attributes
-        $_preattributes     = [];
+		$_preattributes     = [];
 
         //Type and size
         $splittype              = explode(" ", $column->Type);
         if (count($splittype) > 1) $_preattributes["unsigned"] = $splittype[1];
         $splittype              = explode("(", $splittype[0]);
         $_preattributes["type"] = $splittype[0];
-        if (count($splittype) > 1) $_preattributes["length"] = preg_replace("/(\(|\))/", "", $splittype[1]);
+		if (count($splittype) > 1) $_preattributes["length"] = preg_replace("/(\(|\))/", "", $splittype[1]);
+
+		//Check for enum
+		if (isset($_preattributes["length"]) && preg_match("/\,/", $_preattributes["length"])) {
+			$_preattributes["length"] = explode(",", $_preattributes["length"]);
+		}
 
         //Default value
         $_preattributes["default"] = $column->Default;
@@ -79,11 +86,11 @@ class VirtualColumn implements ToRawQuery, ComparableVirtual, Jsonable, Arrayabl
         //Key
         $_preattributes["key"] = $column->Key;
 
-        //Nullable
-        $_preattributes["nullable"] = $column->Null === "NO" ? "NOT NULL":"NULL";
+		//Nullable
+        $_preattributes["nullable"] = $column->Null !== "NO";
 
         //Extra
-        $_preattributes["extra"] = VirtualColumn::extra($column->Extra);
+        $_preattributes["extra"] = $column->Extra;
 
         return $_preattributes;
     }
@@ -92,31 +99,18 @@ class VirtualColumn implements ToRawQuery, ComparableVirtual, Jsonable, Arrayabl
     // Default methods
     //-------------------------------------------------
 
-    public function __construct ($columnname, $attributes = [], $databasename = "", $tablename = "") {
+    public function __construct ($columnname, $attributes = [], $databasename = "", $tablename = "", $isvalid = true) {
         $this->databasename = $databasename;
         $this->tablename    = $tablename;
-        $this->columnname   = $columnname;
-        $this->attributes   = (object)$attributes;
+		$this->columnname   = $columnname;
+
+		//Check for validity
+		if (!is_null($attributes))
+			$this->attributes   = (object)$attributes;
     }
 
     public function isValid () {
         return !is_null($this->attributes);
-    }
-
-    public function buildType () {
-        if (isset($this->attributes->length)) {
-            $length = $this->attributes->length;
-
-            //Check for enums
-            if (is_array($length)) {
-                $length = array_map(function ($value) { return "'".$value."'"; }, $length);
-                $length = implode (", ", $length);
-            }
-
-            return $this->attributes->type."(".$length.")".(isset($this->attributes->unsigned)? " UNSIGNED":"");
-        }
-        else
-            return $this->attributes->type;
     }
 
     //-------------------------------------------------
@@ -124,15 +118,62 @@ class VirtualColumn implements ToRawQuery, ComparableVirtual, Jsonable, Arrayabl
     //-------------------------------------------------
 
     public static function fromDatabase ($databasename, $tablename, $columnname) {
-        $allcolumns = collect(DB::select("SHOW COLUMNS FROM ".$databasename.".".$tablename));
-        $column     = $allcolumns->filter(function ($value) use ($columnname) {
-            return $value->Field === $columnname;
-        })->first();
+		//Try to find a column
+		try {
+			$column = (DB::select(SyntaxLibrary::getColumn($tablename, $columnname)))[0];
+		}
+		//No column found
+		catch (\Exception $e) {
+			return new VirtualColumn($columnname, null, $databasename, $tablename);
+		}
 
         //Unset the name since we already got that in a specific property
-        unset($column->Field);
+		unset($column->Field);
 
-        $_preattributes = VirtualColumn::sanitize($column);
+		$_preattributes = VirtualColumn::sanitize((object)$column);
+
+		//We need to get it's indexes, primaries and foreign keys
+		$constraints = DB::select(SyntaxLibrary::checkIndex($columnname, $tablename));
+
+		for ($i = 0; $i < count($constraints); $i++) {
+			//Primary key
+			if ($constraints[$i]->Key_name == "PRIMARY")
+				$_preattributes["key"] = "PRI";
+			//Unique
+			else if ($constraints[$i]->Key_name == $constraints[$i]->Column_name)
+				$_preattributes["key"] = "UNI";
+			//Foreign key
+			else {
+				$name 				= $constraints[$i]->Key_name;
+
+				//Try to get more info about the constraint
+				try {
+					$specificconstraint = DB::select(SyntaxLibrary::checkConstraint($name, $tablename))[0];
+				}
+				catch (\Exception $e) {
+					throw new Exception("Foreign key name does not follow LOHM convention, could not retrieve enough info to rebuild it");
+				}
+
+				//Build foreign
+				$foreign = [];
+
+				try {
+					$foreign["table"] 		= $specificconstraint->REFERENCED_TABLE_NAME;
+					$foreign["connection"] 	= config("database.default");
+					$foreign["id"]			= explode("_tc_", $name)[1];
+				}
+				catch (\Exception $e) {
+					throw new Exception("Foreign key name does not follow LOHM convention, could not retrieve enough info to rebuild it");
+				}
+
+				//Conditional
+				if ($specificconstraint->UPDATE_RULE != "RESTRICT") $foreign["UPDATE_RULE"] = $specificconstraint->UPDATE_RULE;
+				if ($specificconstraint->DELETE_RULE != "RESTRICT") $foreign["DELETE_RULE"] = $specificconstraint->DELETE_RULE;
+
+				//Index foreign
+				$_preattributes["foreign"] = $foreign;
+			}
+		}
 
         return new VirtualColumn($columnname, $_preattributes, $databasename, $tablename);
     }
@@ -146,47 +187,24 @@ class VirtualColumn implements ToRawQuery, ComparableVirtual, Jsonable, Arrayabl
     }
 
     public function toQuery () {
-        //Configuration
-        $name       = $this->columnname;
-        $type       = $this->buildType();
-        $increment  = isset($this->attributes->extra)? $this->attributes->extra:"";
-        $nullable   = isset($this->attributes->nullable) && $this->attributes->nullable === true? "NULL":"NOT NULL";
-        $primary    = isset($this->attributes->key) && $this->attributes->key == "PRI"? "PRIMARY KEY":"";
-		$default    = isset($this->attributes->default)? ("DEFAULT '".$this->attributes->default."'"):"";
-		$unsigned 	= isset($this->attributes->usnigned)? "UNSIGNED":"";
-
-        //Sanitization
-        $raw = implode(" ", [$name, $type, $increment, $nullable, $default, $primary, $unsigned]);
-        $raw = preg_replace("/\s+/", " ", $raw);
-        $raw = trim($raw);
-
-        return $raw;
+		return SyntaxLibrary::column($this);
     }
 
     public function toLateQuery () {
-        $query = [];
+		$queue = [];
 
-        //Foreign keys
-        if (isset($this->attributes->foreign)) {
-            $name           = $this->columnname."_".$this->tablename."_".$this->attributes->foreign["table"];
-            $database_conn  = config("database.connections.".$this->attributes->foreign["connection"].".database");
+		if (isset($this->attributes->foreign))
+			$queue[] = SyntaxLibrary::createForeign($this);
+		else if (isset($this->attributes->key) && $this->attributes->key == "UNI")
+			$queue[] = SyntaxLibrary::createIndex($this);
 
-            $prequery  = "ALTER TABLE ".$this->tablename;
-            $prequery .= " ADD CONSTRAINT ".$name." FOREIGN KEY (".$this->columnname.") ";
-            $prequery .= "REFERENCES ".$this->attributes->foreign["table"]." (".$this->attributes->foreign["id"].")";
-            $prequery .= isset($this->attributes->foreign["method"]) ? $this->attributes->foreign["method"]:"";
-            $query[] = $prequery;
-        }
-
-        //Unique index
-        if (isset($this->attributes->key) && $this->attributes->key == "UNI")
-            $query[] = "CREATE INDEX ".$this->tablename."_".$this->columnname."in ON ".$this->tablename." (".$this->columnname.")";
-
-        //Return data
-        return $query;
+		return $queue;
     }
 
     public function toArray () {
-        return ["columnname" => $this->columnname, "attributes" => $this->attributes];
+        return [
+			"name" 			=> $this->columnname,
+			"attributes" 	=> $this->attributes
+		];
     }
 }

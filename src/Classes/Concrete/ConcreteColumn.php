@@ -126,7 +126,7 @@ class ConcreteColumn extends VirtualColumn {
             $this->attributes->foreign["connection"]    = config("database.default");
         }
 
-        $this->attributes->foreign["method"] = " ON DELETE ".$method;
+        $this->attributes->foreign["DELETE_RULE"] = $method;
 
         //Always return self for concatenation
         return $this;
@@ -140,7 +140,7 @@ class ConcreteColumn extends VirtualColumn {
             $this->attributes->foreign["connection"]    = config("database.default");
         }
 
-        $this->attributes->foreign["method"] = " ON UPDATE ".$method;
+        $this->attributes->foreign["UPDATE_RULE"] = $method;
 
         //Always return self for concatenation
         return $this;

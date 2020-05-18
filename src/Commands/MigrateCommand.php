@@ -3,6 +3,8 @@
 namespace Aposoftworks\LOHM\Commands;
 
 //Laravel
+
+use Aposoftworks\LOHM\Classes\Concrete\ConcreteTable;
 use Illuminate\Console\Command;
 
 //Classes
@@ -54,35 +56,23 @@ class MigrateCommand extends Command {
         $this->line("");
         $this->line("Queuing migrations");
         $this->line("");
-        $bar = $this->output->createProgressBar(count($allphpfiles));
-        $bar->start();
-
         //Add migrations to queue
-        $allphpfiles->each(function ($file) use ($bar) {
+        $allphpfiles->each(function ($file) {
             LOHM::queue($file);
-            $bar->advance();
         });
 
-        $bar->finish();
-        $this->line("");
         $this->line("");
         $this->line("Running migrations");
         $this->line("");
-        $bar = $this->output->createProgressBar(count($allphpfiles));
-        $bar->start();
 
         //Run migrations
-        LOHM::migrate()->each(function ($migration) use ($bar) {
+        LOHM::migrate()->each(function ($migration) {
             $update = $migration();
 
             if ($update) $this->migrationsupdate += 1;
             else         $this->migrationscreate += 1;
+		});
 
-            $bar->advance();
-        });
-
-        $bar->finish();
-        $this->line("");
         $this->line("");
         $this->info("Migrations ran successfully");
         $this->line($this->migrationscreate." table".($this->migrationscreate == 1 ? "":"s")." were created");

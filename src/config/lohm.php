@@ -16,17 +16,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Cache type
+    | Syntax dictionaries
     |--------------------------------------------------------------------------
     |
-    | When creating our virtual database for keeping things balanced, we create
-    | a cache that helps us fasten the process.
+    | If you would like to add some other info to the name, you can add it here.
+    | Version will only be added if the table_type config is set to versionify.
+	| Uppername is the name after being sanitized by. Do not place empty spaces
+	| in the file name.
     |
-    | values: none, json-cache, json-migration, database
-    |
-    */
+	*/
 
-    "cache_type" => "none",
+	"dictionaries" => [
+		"mysql" => \Aposoftworks\LOHM\Classes\Syntax\MySqlSyntax::class,
+	],
 
     /*
     |--------------------------------------------------------------------------

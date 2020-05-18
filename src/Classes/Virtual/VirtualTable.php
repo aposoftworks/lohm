@@ -3,6 +3,8 @@
 namespace Aposoftworks\LOHM\Classes\Virtual;
 
 //Interfaces
+
+use Aposoftworks\LOHM\Classes\SyntaxLibrary;
 use Illuminate\Contracts\Support\Jsonable;
 use Aposoftworks\LOHM\Contracts\ToRawQuery;
 use Illuminate\Contracts\Support\Arrayable;
@@ -98,7 +100,7 @@ class VirtualTable implements ToRawQuery, ComparableVirtual, Jsonable, Arrayable
 
         //Check if the table exists
         try {
-            $allcolumns     = collect(DB::select("SHOW COLUMNS FROM ".$databasename.".".$tablename));
+            $allcolumns     = collect(DB::select(SyntaxLibrary::getColumns($tablename)));
         }
         catch (\Exception $e) {
             return new VirtualTable($tablename, $virtualcolumns, $databasename, false);
@@ -120,10 +122,6 @@ class VirtualTable implements ToRawQuery, ComparableVirtual, Jsonable, Arrayable
         return new VirtualTable($tablename, $virtualcolumns, $databasename);
     }
 
-    public static function fromMigration ($migrationpath) {
-
-    }
-
     //-------------------------------------------------
     // Export methods
     //-------------------------------------------------
@@ -133,23 +131,7 @@ class VirtualTable implements ToRawQuery, ComparableVirtual, Jsonable, Arrayable
     }
 
     public function toQuery () {
-        //Prepare columns
-        $queryColumns = [];
-
-        for ($i = 0; $i < count($this->_columns); $i++) {
-            $queryColumns[] = $this->_columns[$i]->toQuery();
-        }
-
-        //Prepare general statement
-        $raw  = "CREATE TABLE ".$this->tablename." ( ";
-        $raw .= implode(", ", $queryColumns);
-        $raw .= " );";
-
-        //Sanitize
-        $raw = preg_replace("/\s+/", " ", $raw);
-        $raw = trim($raw);
-
-        return $raw;
+        return SyntaxLibrary::createTable($this);
     }
 
     public function toLateQuery () {
@@ -177,9 +159,8 @@ class VirtualTable implements ToRawQuery, ComparableVirtual, Jsonable, Arrayable
 
         //All data response
         return [
-            "columns"       => $columns_as_arrays,
-            "tablename"     => $this->tablename,
-            "attributes"    => $this->attributes,
+            "name"		=> $this->tablename,
+            "columns"	=> $columns_as_arrays,
         ];
     }
 }
