@@ -133,7 +133,10 @@ class VirtualColumn implements ToRawQuery, ComparableVirtual, Jsonable, Arrayabl
 		$queue = [];
 		$queue["column"] = $this->columnname;
 
-		if (isset($this->attributes->foreign)) {
+		if (isset($this->attributes->primary)) {
+			$queue[$this->columnname] = SyntaxLibrary::createPrimary($this);
+		}
+		else if (isset($this->attributes->foreign)) {
 			if (is_null($this->attributes->foreign["name"]))
 				$queue[SyntaxLibrary::createForeignName($this)] = SyntaxLibrary::createForeign($this);
 			else

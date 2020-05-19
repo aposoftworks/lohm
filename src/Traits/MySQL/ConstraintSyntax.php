@@ -7,6 +7,42 @@ use Exception;
 use Aposoftworks\LOHM\Classes\Virtual\VirtualColumn;
 
 trait ConstraintSyntax {
+
+    /**
+     * Returns a raw DB string that can be used as a query string
+     *
+	 * @param VirtualColumn $column You can only pass the virtual column, the tablename and indexname will be used from it
+	 * @param string $tablename If ommited, value will be from the virtual column object
+	 *
+     * @return string a query ready primary key
+     */
+	static function createPrimary (VirtualColumn $column, string $tablename = null) : string {
+		//Exception of missing data
+		if (!($column instanceof VirtualColumn) && is_null($tablename)) {
+			throw new Exception("Virtual column not given but expecting it to fill missing data");
+		}
+
+		//Column string name
+		if ($column instanceof VirtualColumn) {
+			$columnname = $column->name();
+		}
+		else {
+			$columnname = $column;
+		}
+
+		//Update the tablename based on the column
+		if (is_null($tablename)) {
+			$tablename = $column->table();
+		}
+
+		//Get tablename from the column
+		if ($tablename) {
+			$tablename = $column->table();
+		}
+
+		return "ALTER TABLE $tablename ADD PRIMARY KEY ($columnname)";
+	}
+
 	/**
      * Returns a raw DB string that can be used as a query string
      *
@@ -179,9 +215,9 @@ trait ConstraintSyntax {
 	 * @param VirtualColumn|string $index
 	 * @param string $table If you pass a VirtualColumn as the first argument, you can ommit this argument
 	 *
-     * @return string a query ready to check a index existance
+     * @return string a query ready to check a foreign key from name
      */
-	public static function checkIndex ($column, string $tablename = null) : string {
+	public static function checkConstraint ($column, string $tablename = null) : string {
 		//You should pass the table name if the column is a string
 		if (!($column instanceof VirtualColumn) && is_null($tablename)) {
 			throw new Exception("Could not determine the table name");
@@ -204,28 +240,6 @@ trait ConstraintSyntax {
 		$command 	= [];
 		$command[] 	= "SHOW INDEX FROM $tablename";
 		$command[] 	= "WHERE Column_name = '$constraintname'";
-
-		return implode(" ", $command);
-	}
-
-    /**
-     * Returns a raw DB string that can be used as a query string
-     *
-	 * @param VirtualColumn|string $index
-	 * @param string $table If you pass a VirtualColumn as the first argument, you can ommit this argument
-	 *
-     * @return string a query ready to check a foreign key from name
-     */
-	public static function checkConstraint ($constraintname, string $tablename = null) : string {
-		//Build command
-		$command 	= [];
-		$command[] 	= "SELECT *";
-		$command[] 	= "FROM information_schema.REFERENTIAL_CONSTRAINTS";
-		$command[] 	= "WHERE CONSTRAINT_NAME = '$constraintname'";
-
-		//Check table only if passed
-		if (!is_null($tablename))
-			$command[] 	= "AND TABLE_NAME = '$tablename'";
 
 		return implode(" ", $command);
 	}

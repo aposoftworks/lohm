@@ -134,7 +134,7 @@ class LOHM {
 		//Change index/foreign
 		else if ($data["type"] == "constraint") {
 			//Check if its necessary
-			if (!count(DB::select(SyntaxLibrary::checkIndex($data["column"], $data["table"]->name())))) {
+			if (!count(DB::select(SyntaxLibrary::checkConstraint($data["column"], $data["table"]->name())))) {
             	DB::connection($data["conn"])->statement($data["query"]);
 			}
 		}

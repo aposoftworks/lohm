@@ -74,7 +74,7 @@ trait TableSyntax {
 	* @return string table check complete syntax
 	*/
    public static function checkTable (string $tablename) : string {
-	   return "SELECT table_schema FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = '$tablename';";
+	   return "SHOW TABLES LIKE '$tablename';";
    }
 
    /**

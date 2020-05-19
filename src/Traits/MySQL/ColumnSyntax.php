@@ -66,10 +66,6 @@ trait ColumnSyntax {
 		else
 			$response .= " NULL";
 
-		//Primary
-		if (isset($attributes->key) && $attributes->key == "PRI")
-			$response .= " PRIMARY KEY";
-
 		//Default
 		if (isset($attributes->default))
 			$response .= " DEFAULT '$attributes->default'";
