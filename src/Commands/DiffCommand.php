@@ -19,7 +19,7 @@ class DiffCommand extends Command {
      *
      * @var string
      */
-    protected $signature = 'analyze:diff {--A|all}';
+    protected $signature = 'analyze:diff';
 
     /**
      * The console command description.

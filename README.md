@@ -4,6 +4,12 @@
 
 This packages overhaul laravel's migration with a table absolute state approach instead of a change state approach. What this means? This means that you tell the migration how you want your tables, and it will take care of syncing it with your database, you do not need to tell it how. So you don't have to keep dozens of files that describes changes, just one for your table. Order is not important, because foreign keys and such, are organized to be placed at the end of the migration, so you can be sure all tables were created before it runs.
 
+## Features
+- Write your migrations without worrying about the order the foreign keys are added
+- A file per table, you don't need to write multiple migrations, the changes are detected and made accordingly
+- Better syntax for writing columns (write less, do more)
+- Better control over how things are made (you can customize migration name, default length, and other things)
+
 ## Installation
 This is a typical installation Laravel package installation, you can run as follows:
 ``` bash
@@ -49,30 +55,29 @@ php artisan vendor:publish --tag=lohm-stub
 It will be placed inside resources/stubs/lohm.php
 ## Commands
 
-- make:table {classname} {name?} {--T|template=default}
-
+### make:table {classname} {name?} {--T|template=default}
 Creates a table migration
-- migrate:sync
 
-Will compare the migrations with the database and apply the differences
-- analyze {database?} {table?} {column?}
+### migrate:sync
+Will run our custom migrations
 
-Will analyze the migrations data
-- analyze:current
+### analyze
+Will show the migrations that would be made
 
+### analyze:current
 Will analyze the current database
-- analyze:diff {database?} {table?}
 
+### analyze:diff
 Will show the differences between database and migrations without applying it
-- migrate:clear
 
+### migrate:clear
 Will clear the database using our custom migrations
 
 ## Custom stubs
 With LOHM you can write custom migrations to use as templates when creating new ones, after publishing the default one (using: `php artisan vendor:publish --tag=lohm-stub`), you change "default" with the name you want to use and you are good to go. For example, you can use `php artisan make:table User --template=user` to use the `lohm.user.php` stub.
 
 ## Supports
-We currently support those database types, we are looking for pull requests to help adding support for different databases
+We currently support those database types, we are looking for pull requests to help adding support for different databases. To add your own custom syntax library, you can publish the configuration file and link it in the dictionaries array.
 
-- MySQL
-- SQLite (partial)
+We currently support:
+- mysql
