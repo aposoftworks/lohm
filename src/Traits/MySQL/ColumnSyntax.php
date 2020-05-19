@@ -1,6 +1,6 @@
 <?php
 
-namespace Aposoftworks\LOHM\Classes\Syntax\MySQL;
+namespace Aposoftworks\LOHM\Traits\MySQL;
 
 //Classes
 use Aposoftworks\LOHM\Classes\Virtual\VirtualColumn;

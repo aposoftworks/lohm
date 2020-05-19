@@ -3,9 +3,9 @@
 namespace Aposoftworks\LOHM\Classes\Syntax;
 
 //Traits
-use Aposoftworks\LOHM\Classes\Syntax\MySQL\ColumnSyntax;
-use Aposoftworks\LOHM\Classes\Syntax\MySQL\TableSyntax;
-use Aposoftworks\LOHM\Classes\Syntax\MySQL\ConstraintSyntax;
+use Aposoftworks\LOHM\Traits\MySQL\ColumnSyntax;
+use Aposoftworks\LOHM\Traits\MySQL\TableSyntax;
+use Aposoftworks\LOHM\Traits\MySQL\ConstraintSyntax;
 
 //Interfaces
 use Aposoftworks\LOHM\Contracts\DBSyntax\TableContract;

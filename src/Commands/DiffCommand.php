@@ -3,8 +3,6 @@
 namespace Aposoftworks\LOHM\Commands;
 
 //Laravel
-
-use Aposoftworks\LOHM\Classes\Helpers\DatabaseHelper;
 use Illuminate\Console\Command;
 
 //Classes
@@ -12,6 +10,7 @@ use Aposoftworks\LOHM\Classes\Facades\LOHM;
 
 //Helpers
 use Aposoftworks\LOHM\Classes\Helpers\NameBuilder;
+use Aposoftworks\LOHM\Classes\Helpers\DatabaseHelper;
 use Aposoftworks\LOHM\Classes\Helpers\DirectoryHelper;
 
 class DiffCommand extends Command {

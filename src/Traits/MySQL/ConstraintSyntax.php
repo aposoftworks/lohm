@@ -1,6 +1,6 @@
 <?php
 
-namespace Aposoftworks\LOHM\Classes\Syntax\MySQL;
+namespace Aposoftworks\LOHM\Traits\MySQL;
 
 //Classes
 use Exception;
@@ -76,7 +76,10 @@ trait ConstraintSyntax {
 
 		//Fill foreign name if necessary
 		if (is_null($foreignname)) {
-			$foreignname = "_fc_".$foreignkeycolumn."_ft_".$tablename."_tt_".$targettable."_tc_".$targetcolumn;
+			if (isset($attributes->name) && !is_null($attributes->name))
+				$foreignname = $attributes->name;
+			else
+				$foreignname = "_fc_".$foreignkeycolumn."_ft_".$tablename."_tt_".$targettable."_tc_".$targetcolumn;
 		}
 
 		//Build

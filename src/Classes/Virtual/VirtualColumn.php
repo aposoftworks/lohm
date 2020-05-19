@@ -3,18 +3,28 @@
 namespace Aposoftworks\LOHM\Classes\Virtual;
 
 //Interfaces
-
-use Aposoftworks\LOHM\Classes\SyntaxLibrary;
 use Illuminate\Contracts\Support\Jsonable;
 use Illuminate\Contracts\Support\Arrayable;
 use Aposoftworks\LOHM\Contracts\ToRawQuery;
 use Aposoftworks\LOHM\Contracts\ComparableVirtual;
-use Exception;
+
 //Facades
 use Illuminate\Support\Facades\DB;
-use stdClass;
+
+//General
+use Exception;
+use Aposoftworks\LOHM\Classes\SyntaxLibrary;
+use Aposoftworks\LOHM\Traits\ColumnSanitizer;
+use Aposoftworks\LOHM\Traits\ConstraintSanitizer;
 
 class VirtualColumn implements ToRawQuery, ComparableVirtual, Jsonable, Arrayable {
+
+    //-------------------------------------------------
+    // Traits
+    //-------------------------------------------------
+
+	use ColumnSanitizer;
+	use ConstraintSanitizer;
 
     /**
      * The real name of the database that this column belongs to
@@ -61,41 +71,6 @@ class VirtualColumn implements ToRawQuery, ComparableVirtual, Jsonable, Arrayabl
     }
 
     //-------------------------------------------------
-    // Static methods
-    //-------------------------------------------------
-
-    public static function sanitize ($column) {
-        //Sort attributes
-		$_preattributes     = [];
-
-        //Type and size
-        $splittype              = explode(" ", $column->Type);
-        if (count($splittype) > 1) $_preattributes["unsigned"] = $splittype[1];
-        $splittype              = explode("(", $splittype[0]);
-        $_preattributes["type"] = $splittype[0];
-		if (count($splittype) > 1) $_preattributes["length"] = preg_replace("/(\(|\))/", "", $splittype[1]);
-
-		//Check for enum
-		if (isset($_preattributes["length"]) && preg_match("/\,/", $_preattributes["length"])) {
-			$_preattributes["length"] = explode(",", $_preattributes["length"]);
-		}
-
-        //Default value
-        $_preattributes["default"] = $column->Default;
-
-        //Key
-        $_preattributes["key"] = $column->Key;
-
-		//Nullable
-        $_preattributes["nullable"] = $column->Null !== "NO";
-
-        //Extra
-        $_preattributes["extra"] = $column->Extra;
-
-        return $_preattributes;
-    }
-
-    //-------------------------------------------------
     // Default methods
     //-------------------------------------------------
 
@@ -136,43 +111,7 @@ class VirtualColumn implements ToRawQuery, ComparableVirtual, Jsonable, Arrayabl
 		$constraints = DB::select(SyntaxLibrary::checkIndex($columnname, $tablename));
 
 		for ($i = 0; $i < count($constraints); $i++) {
-			//Primary key
-			if ($constraints[$i]->Key_name == "PRIMARY")
-				$_preattributes["key"] = "PRI";
-			//Unique
-			else if ($constraints[$i]->Key_name == $constraints[$i]->Column_name)
-				$_preattributes["key"] = "UNI";
-			//Foreign key
-			else {
-				$name 				= $constraints[$i]->Key_name;
-
-				//Try to get more info about the constraint
-				try {
-					$specificconstraint = DB::select(SyntaxLibrary::checkConstraint($name, $tablename))[0];
-				}
-				catch (\Exception $e) {
-					throw new Exception("Foreign key name does not follow LOHM convention, could not retrieve enough info to rebuild it");
-				}
-
-				//Build foreign
-				$foreign = [];
-
-				try {
-					$foreign["table"] 		= $specificconstraint->REFERENCED_TABLE_NAME;
-					$foreign["connection"] 	= config("database.default");
-					$foreign["id"]			= explode("_tc_", $name)[1];
-				}
-				catch (\Exception $e) {
-					throw new Exception("Foreign key name does not follow LOHM convention, could not retrieve enough info to rebuild it");
-				}
-
-				//Conditional
-				if ($specificconstraint->UPDATE_RULE != "RESTRICT") $foreign["UPDATE_RULE"] = $specificconstraint->UPDATE_RULE;
-				if ($specificconstraint->DELETE_RULE != "RESTRICT") $foreign["DELETE_RULE"] = $specificconstraint->DELETE_RULE;
-
-				//Index foreign
-				$_preattributes["foreign"] = $foreign;
-			}
+			$_preattributes = $_preattributes + VirtualColumn::sanitizeConstraint($constraints[$i], $tablename);
 		}
 
         return new VirtualColumn($columnname, $_preattributes, $databasename, $tablename);

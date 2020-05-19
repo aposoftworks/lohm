@@ -2,11 +2,13 @@
 
 namespace Aposoftworks\LOHM\Classes\Helpers;
 
-//Classes
+//Facades
+use Illuminate\Support\Facades\DB;
 use Aposoftworks\LOHM\Classes\Facades\LOHM;
 
 //Classes
 use Illuminate\Console\Command;
+use Aposoftworks\LOHM\Classes\SyntaxLibrary;
 use Aposoftworks\LOHM\Classes\Virtual\VirtualTable;
 use Aposoftworks\LOHM\Classes\Virtual\VirtualColumn;
 use Aposoftworks\LOHM\Classes\Virtual\VirtualDatabase;
@@ -14,30 +16,100 @@ use Aposoftworks\LOHM\Classes\Virtual\VirtualDatabase;
 class DatabaseHelper {
 
     //-------------------------------------------------
+    // Build methods
+	//-------------------------------------------------
+
+	public static function getTableCreation ($tablename) {
+		$result = DB::select(SyntaxLibrary::showCreateTable($tablename));
+
+		//No table found
+		if (count($result) == 0) {
+			return "";
+		}
+
+		//Return result
+		return ((array)$result[0])["Create Table"];
+	}
+
+	public static function buildTable ($string) : VirtualTable {
+		//Variable declarations
+		$statements 	= [];
+		$string_columns = [];
+		$columns 		= [];
+
+		//Matches
+		preg_match("/\((.|\n)+\)/", $string, $statements);
+		preg_match_all("/.+\n/", $statements[0], $string_columns);
+
+		//Remove empty first line
+		array_shift($string_columns[0]);
+
+		//Trim
+		$string_columns = array_map(function ($column) { return trim($column); }, $string_columns[0]);
+
+		//Get table name
+		preg_match("/\`.*\`/", $string, $tablename);
+		$tablename = preg_replace("/\`/", "", $tablename[0]);
+
+		//Loop all columns
+		for ($i = 0; $i < count($string_columns); $i++) {
+			//Check if it is a column or a modifier
+			if (preg_match("/^\s*\`.+\`/", $string_columns[$i])) {
+				//Get column name
+				preg_match("/\`.*\`/", $string_columns[$i], $name_column);
+				$name_column = preg_replace("/\`/", "", $name_column[0]);
+
+				//Build it
+				$columns[] = VirtualColumn::fromDatabase("", $tablename, $name_column);
+			}
+		}
+
+		//Build actual virtual table
+		return new VirtualTable($tablename, $columns);
+	}
+
+    //-------------------------------------------------
     // Diff methods
     //-------------------------------------------------
 
     public static function diffTable (Command $command, VirtualTable $table, string $prefix = "", $all = true) {
         $fields         = $table->columns();
-        $exists         = LOHM::existsTable($table->name());
+		$exists         = LOHM::existsTable($table->name());
 
         $command->line($prefix."<fg=".($exists? "default":"green").">TABLE ".$table->name()."</>");
 
-        //Check new columns
-        for ($i = 0; $i < count($fields); $i++) {
-            static::diffColumn($command, $fields[$i], VirtualColumn::fromDatabase($table->database(), $table->name(), $fields[$i]->name()), $prefix."  ", $all);
-        }
+		if ($exists) {
+			//Check removed columns
+			$data_fields    = $table->dataColumns();
+			$deleted_fields = VirtualTable::fromDatabase($table->database(), $table->name())->columns();
+			$assoc_fields 	= [];
 
-        //Check removed columns
-        $data_fields    = $table->dataColumns();
-        $deleted_fields = VirtualTable::fromDatabase($table->database(), $table->name())->columns();
+			//To association
+			for ($i = 0; $i < count($deleted_fields); $i++) {
+				$assoc_fields[$deleted_fields[$i]->name()] = $deleted_fields[$i];
+			}
 
-        for ($i = 0; $i < count($deleted_fields); $i++) {
-            if (!key_exists($deleted_fields[$i]->name(), $data_fields))
-                $command->line($prefix."  <fg=red>COLUMN ".$deleted_fields[$i]->toQuery()."</>");
+			//Check new columns
+			for ($i = 0; $i < count($fields); $i++) {
+				if (isset($assoc_fields[$fields[$i]->name()]))
+					static::diffColumn($command, $fields[$i], $assoc_fields[$fields[$i]->name()], $prefix."  ", $all);
+				else
+					$command->line($prefix."<fg=green>COLUMN ".$fields[$i]->toQuery()."</>");
+			}
+
+			for ($i = 0; $i < count($deleted_fields); $i++) {
+				if (!key_exists($deleted_fields[$i]->name(), $data_fields))
+				$command->line($prefix."  <fg=red>COLUMN ".$deleted_fields[$i]->toQuery()."</>");
+			}
+
+			$command->line("");
 		}
-
-		$command->line("");
+		else {
+			//Check new columns
+			for ($i = 0; $i < count($fields); $i++) {
+				$command->line($prefix."<fg=green>COLUMN ".$fields[$i]->toQuery()."</>");
+			}
+		}
     }
 
     public static function diffColumn (Command $command, VirtualColumn $column_new, VirtualColumn $column_current, string $prefix = "", $all = true) {

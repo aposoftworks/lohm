@@ -1,6 +1,6 @@
 <?php
 
-namespace Aposoftworks\LOHM\Classes\Syntax\MySQL;
+namespace Aposoftworks\LOHM\Traits\MySQL;
 
 //Classes
 use Aposoftworks\LOHM\Classes\Virtual\VirtualTable;
@@ -95,5 +95,16 @@ trait TableSyntax {
 	*/
    static function getTables () : string {
 	   return "SHOW TABLES";
+   }
+
+   /**
+	* Gets a specific table creatiom method
+	*
+	* @param string $tablename The target table name
+	*
+	* @return string the syntax to get a table creation method
+	*/
+   static function showCreateTable ($tablename) : string {
+	   return "SHOW CREATE TABLE $tablename";
    }
 }

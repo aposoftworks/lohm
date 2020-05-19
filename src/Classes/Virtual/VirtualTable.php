@@ -4,6 +4,7 @@ namespace Aposoftworks\LOHM\Classes\Virtual;
 
 //Interfaces
 
+use Aposoftworks\LOHM\Classes\Helpers\DatabaseHelper;
 use Aposoftworks\LOHM\Classes\SyntaxLibrary;
 use Illuminate\Contracts\Support\Jsonable;
 use Aposoftworks\LOHM\Contracts\ToRawQuery;
@@ -39,7 +40,7 @@ class VirtualTable implements ToRawQuery, ComparableVirtual, Jsonable, Arrayable
     /**
      * The columns that compose this table
      *
-     * @var \Aposoftworks\LOHM\Classes\Virtual\VirtualColumn array
+     * @var \Aposoftworks\LOHM\Classes\Virtual\VirtualColumn[]
      */
     protected $_columns;
 
@@ -94,32 +95,10 @@ class VirtualTable implements ToRawQuery, ComparableVirtual, Jsonable, Arrayable
     //-------------------------------------------------
 
     public static function fromDatabase ($databasename, $tablename) {
-        //Get the columns
-        $allcolumns     = [];
-        $virtualcolumns = [];
+		$string = DatabaseHelper::getTableCreation($tablename);
+		$table 	= DatabaseHelper::buildTable($string);
 
-        //Check if the table exists
-        try {
-            $allcolumns     = collect(DB::select(SyntaxLibrary::getColumns($tablename)));
-        }
-        catch (\Exception $e) {
-            return new VirtualTable($tablename, $virtualcolumns, $databasename, false);
-        }
-
-        //Loop all columns
-        for ($i = 0; $i < $allcolumns->count(); $i++) {
-            $columnname = $allcolumns[$i]->Field;
-            $columnattr = $allcolumns[$i];
-
-            //Remove the name
-            unset($columnattr->Field);
-
-            $sanitizedattri = VirtualColumn::sanitize($columnattr);
-
-            $virtualcolumns[] = new VirtualColumn($columnname, $sanitizedattri, $databasename, $tablename);
-        }
-
-        return new VirtualTable($tablename, $virtualcolumns, $databasename);
+        return $table;
     }
 
     //-------------------------------------------------

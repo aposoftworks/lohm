@@ -76,11 +76,12 @@ class ConcreteColumn extends VirtualColumn {
     // Foreign types
     //-------------------------------------------------
 
-    public function foreign ($otherTable = null) {
+    public function foreign ($foreignName = null) {
         if (!isset($this->attributes->foreign)) {
             $this->attributes->foreign                  = [];
-            $this->attributes->foreign["id"]            = "id";
-            $this->attributes->foreign["table"]         = is_null($otherTable) ? $this->tablename:$otherTable;
+			$this->attributes->foreign["id"]            = "id";
+			$this->attributes->foreign["name"]			= $foreignName;
+            $this->attributes->foreign["table"]         = $this->tablename;
             $this->attributes->foreign["connection"]    = config("database.default");
         }
 

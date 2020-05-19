@@ -50,4 +50,13 @@ interface TableContract {
      * @return string the syntax to get all the tables
      */
 	static function getTables () : string;
+
+    /**
+     * Gets a specific table creatiom method
+     *
+	 * @param string $tablename The target table name
+	 *
+     * @return string the syntax to get a table creation method
+     */
+	static function showCreateTable ($tablename) : string;
 }
