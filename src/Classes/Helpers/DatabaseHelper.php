@@ -58,14 +58,140 @@ class DatabaseHelper {
 				//Get column name
 				preg_match("/\`.*\`/", $string_columns[$i], $name_column);
 				$name_column = preg_replace("/\`/", "", $name_column[0]);
+				$constraints = [];
+
+				//Get constraints
+				for ($x = 0; $x < count($string_columns); $x++) {
+					//Primary key
+					if (
+						$x !== $i &&
+						(
+							preg_match("/PRIMARY KEY.*$name_column/", $string_columns[$x]) ||
+							preg_match("/UNIQUE KEY.*$name_column/", $string_columns[$x]) ||
+							preg_match("/FOREIGN KEY \(`$name_column`\)/", $string_columns[$x])
+						)
+					) {
+						$constraints[] = $string_columns[$x];
+					}
+				}
 
 				//Build it
-				$columns[] = VirtualColumn::fromDatabase("", $tablename, $name_column);
+				$columns[] = static::buildColumn ($string_columns[$i], $tablename, $constraints);
 			}
 		}
 
 		//Build actual virtual table
 		return new VirtualTable($tablename, $columns);
+	}
+
+	public static function buildColumn ($string, $tablename = "", $constraints = []) {
+		//Sets
+		$name_column 	= [];
+		$attributes 	= [];
+		$type 			= [];
+
+		//Get column name
+		preg_match("/\`.*\`/", $string, $name_column);
+		$name_column = preg_replace("/\`/", "", $name_column[0]);
+
+		//Build type and length (if any)
+		preg_match("/$name_column\`\s+.+\s+/U", $string, $type);
+		$type = preg_replace("/(.+\`|\s+)/", "", $type[0]);
+
+		//Contains length
+		if (preg_match("/(\(|\))/", $type)) {
+			$parts 					= explode("(", $type);
+			$attributes["type"] 	= $parts[0];
+
+			//Build better length
+			$length	= preg_replace("/\)/", "", $parts[1]);
+
+			//Is array
+			if (preg_match("/,/", $length)) {
+				$length = explode(",", $length);
+				$length = array_map(function ($value) { return preg_replace("/(\'|\"|\`)/", "", $value); }, $length);
+			}
+
+			$attributes["length"] = $length;
+		}
+		else {
+			$attributes["type"] = $type;
+		}
+
+		//Build nullable
+		$attributes["nullable"] = !preg_match("/NOT NULL/", $string);
+
+		//Build unsigned
+		$attributes["unsigned"] = !!preg_match("/UNSIGNED/", $string);
+
+		//Build default
+		if (preg_match("/DEFAULT/", $string)) {
+			$value = preg_replace("/(.+DEFAULT\s+|,)/", "", $string);
+
+			if (!preg_match("/NULL/", $value))
+				$attributes["default"] = preg_replace("/(\'|\"|\`)/", "", $value);
+		}
+
+		//Build constraints
+		for ($x = 0; $x < count($constraints); $x++) {
+			//Primary key
+			if (preg_match("/PRIMARY KEY.*$name_column/", $constraints[$x])) {
+				$attributes["key"] = "PRI";
+			}
+			//INDEX
+			else if (preg_match("/UNIQUE KEY.*$name_column/", $constraints[$x])) {
+				//Set up
+				$name_unique = [];
+
+				//Match
+				preg_match_all("/\`.+\`.*\(/", $constraints[$x], $name_unique);
+				$name_unique = preg_replace("/\`/", "", $name_unique[0]);
+				$name_unique = preg_replace("/\s+.*$/", "", $name_unique[0]);
+
+				$attributes["key"] 	= $name_unique;
+			}
+			//Foreign key
+			else {
+				$foreign 				= [];
+				$foreign["connection"]	= config("database.default");
+
+				//Get foreign name
+				preg_match("/\s+\`.+\`\s+FOREIGN/", $constraints[$x], $name_foreign);
+				$name_foreign 		= preg_replace("/(\`|\s|FOREIGN)/", "", $name_foreign[0]);
+				$foreign["name"] 	= $name_foreign;
+
+				//References table
+				preg_match("/REFERENCES\s+\`.+\`\s/", $constraints[$x], $table_foreign);
+				$table_foreign 		= preg_replace("/(\`|\s|REFERENCES)/", "", $table_foreign[0]);
+				$foreign["table"]	= $table_foreign;
+
+				//References column
+				preg_match("/$table_foreign\`\s+\(.+\)/", $constraints[$x], $column_foreign);
+				$column_foreign = preg_replace("/(\`|\s|$table_foreign|\(|\))/", "", $column_foreign[0]);
+				$foreign["id"]	= $column_foreign;
+
+				//Cascade update rule
+				if (preg_match("/ON UPDATE\s\S+/", $constraints[$x], $update_foreign)) {
+					$update_foreign 		= preg_replace("/(\`|\s|ON UPDATE|\(|\))/", "", $update_foreign[0]);
+
+					if ($update_foreign !== "RESTRICT")
+					$foreign["UPDATE_RULE"] = $update_foreign;
+				}
+
+				//Cascade delete rule
+				if (preg_match("/ON DELETE\s\S+/", $constraints[$x], $delete_foreign)) {
+					$delete_foreign 		= preg_replace("/(\`|\s|ON DELETE|\(|\))/", "", $delete_foreign[0]);
+
+					if ($delete_foreign !== "RESTRICT")
+						$foreign["DELETE_RULE"] = $delete_foreign;
+				}
+
+				$attributes["foreign"] = $foreign;
+			}
+		}
+
+		//Return
+		return new VirtualColumn($name_column, $attributes, "", $tablename);
 	}
 
     //-------------------------------------------------

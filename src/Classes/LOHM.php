@@ -126,42 +126,36 @@ class LOHM {
     private function migrationRun ($data) {
         $tablename = $data["table"]->name();
 
-        if ($data["type"] == "alter") {
-
+		//Drop a table
+		if ($data["type"] == "droptable") {
             //Insert all of it
             DB::connection($data["conn"])->statement($data["query"]);
-            return true;
-        }
-        else {
+		}
+		//Change index/foreign
+		else if ($data["type"] == "alter") {
+			//Check if its necessary
+            DB::connection($data["conn"])->statement($data["query"]);
+		}
+		//Table columns
+        else if ($data["type"] == "createtable") {
             //Update table
             if (LOHM::conn($data["conn"])->existsTable($tablename)) {
                 $connection     = config("database.connections.".$data["conn"].".database");
                 $currenttable   = VirtualTable::fromDatabase($connection, $tablename);
 				$changes        = DatabaseHelper::changesNeeded($currenttable, $data["table"]);
 
-				//Reset all indexes and foreign keys
-				if (LOHM::conn($data["conn"])->existsTable($tablename)) {
-					QueryHelper::dropConstraints($tablename);
-					QueryHelper::dropIndexes($tablename);
-				}
-
-                if ($changes === "")
-                    return true;
-                else
+                if ($changes !== "")
                     DB::connection($data["conn"])->statement($changes);
-
-                return true;
             }
             //Create table
             else {
                 DB::connection($data["conn"])->statement($data["query"]);
-                return true;
             }
         }
     }
 
     private function enqueuer ($queue, $table, $queryType) {
-		$query = ["conn" => $this->connection, "table" => $table, "type" => ($queryType === "_queues" ? "create":"alter")];
+		$query = ["conn" => $this->connection, "table" => $table, "type" => ($queryType === "_queues" ? "createtable":"alter")];
 
         if (is_array($queue)) {
             for ($i = 0; $i < count($queue); $i++) {

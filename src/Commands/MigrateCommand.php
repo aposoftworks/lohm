@@ -15,8 +15,7 @@ use Aposoftworks\LOHM\Classes\Helpers\NameBuilder;
 use Aposoftworks\LOHM\Classes\Helpers\DirectoryHelper;
 
 class MigrateCommand extends Command {
-    protected $migrationscreate = 0;
-    protected $migrationsupdate = 0;
+    protected $queries = 0;
 
     /**
      * The name and signature of the console command.
@@ -54,28 +53,24 @@ class MigrateCommand extends Command {
         });
 
         $this->line("");
-        $this->line("Queuing migrations");
-        $this->line("");
+		$this->line("Queuing migrations");
+
         //Add migrations to queue
         $allphpfiles->each(function ($file) {
             LOHM::queue($file);
         });
 
-        $this->line("");
         $this->line("Running migrations");
-        $this->line("");
 
         //Run migrations
         LOHM::migrate()->each(function ($migration) {
             $update = $migration();
 
-            if ($update) $this->migrationsupdate += 1;
-            else         $this->migrationscreate += 1;
+            $this->queries ++;
 		});
 
         $this->line("");
         $this->info("Migrations ran successfully");
-        $this->line($this->migrationscreate." table".($this->migrationscreate == 1 ? "":"s")." were created");
-        $this->line($this->migrationsupdate." content".($this->migrationscreate == 1 ? "":"s")." updated inside of the tables");
+        $this->line($this->queries." queries ran");
     }
 }

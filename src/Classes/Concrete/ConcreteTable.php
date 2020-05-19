@@ -94,9 +94,9 @@ class ConcreteTable extends VirtualTable {
 
 	public function foreign ($name, $tablename) {
 		if (config("lohm.default_database.id_type") == "string")
-			return $this->string($name, config("lohm.default_database.sid_size"))->foreign($tablename);
+			return $this->string($name, config("lohm.default_database.sid_size"))->foreign()->on($tablename);
 		else
-			return $this->bigInteger($name, config("lohm.default_database.id_size"))->unsigned()->foreign($tablename);
+			return $this->bigInteger($name, config("lohm.default_database.id_size"))->unsigned()->foreign()->on($tablename);
 	}
 
     //-------------------------------------------------

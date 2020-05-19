@@ -35,7 +35,7 @@ trait ColumnSyntax {
 		}
 
 		//Checking for unsigned
-		if (isset($attributes->unsigned))
+		if (isset($attributes->usnigned) && $attributes->unsigned === true)
 			$response .= " UNSIGNED";
 
 		//Response
@@ -73,10 +73,6 @@ trait ColumnSyntax {
 		//Default
 		if (isset($attributes->default))
 			$response .= " DEFAULT '$attributes->default'";
-
-		//Unsigned
-		if (isset($attributes->usnigned))
-			$response .= " UNSIGNED";
 
 		//Sanitization
 		$response = preg_replace("/\s+/", " ", $response);

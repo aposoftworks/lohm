@@ -45,7 +45,7 @@ class ConcreteColumn extends VirtualColumn {
     }
 
     public function unique () {
-        $this->attributes->key = "UNI";
+        $this->attributes->key = $this->name();
 
         //Always return self for concatenation
         return $this;

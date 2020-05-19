@@ -132,10 +132,15 @@ class VirtualColumn implements ToRawQuery, ComparableVirtual, Jsonable, Arrayabl
     public function toLateQuery () {
 		$queue = [];
 
-		if (isset($this->attributes->foreign))
+		if (isset($this->attributes->foreign)) {
 			$queue[] = SyntaxLibrary::createForeign($this);
-		else if (isset($this->attributes->key) && $this->attributes->key == "UNI")
-			$queue[] = SyntaxLibrary::createIndex($this);
+		}
+		else if (isset($this->attributes->key) && $this->attributes->key != "PRI") {
+			if ($this->attributes->key === "UNI")
+				$queue[] = SyntaxLibrary::createIndex($this);
+			else
+				$queue[] = SyntaxLibrary::createIndex($this, $this->table(), $this->attributes->key);
+		}
 
 		return $queue;
     }
