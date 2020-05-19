@@ -18,6 +18,15 @@ interface ConstraintContract {
 	static function createIndex (VirtualColumn $column, string $tablename = null, string $indexname = null) : string;
 
     /**
+     * Returns a foreign key name
+     *
+	 * @param VirtualColumn $column Virtual column object
+	 *
+     * @return string a foreign key name
+     */
+	static function createForeignName (VirtualColumn $column) : string;
+
+    /**
      * Returns a raw DB string that can be used as a query string
      *
 	 * @param VirtualColumn $column You can only pass the virtual column, the tablename and foreignname will be used from it

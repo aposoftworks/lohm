@@ -295,6 +295,9 @@ class DatabaseHelper {
 		if (count($obj1late) !== count($obj2late))
 			return false;
 
+		//No indexes
+		if (count($obj1late)) return true;
+
 		//Loop all indexes
 		for ($i = 0; $i < count($obj1late); $i++) {
 			if (strtoupper($obj1late[$i]) !== strtoupper($obj2late[$i]))

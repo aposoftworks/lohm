@@ -47,6 +47,23 @@ trait ConstraintSyntax {
 
 		return "CREATE UNIQUE INDEX $indexname ON $tablename ($columnname)";
 	}
+    /**
+     * Returns a foreign key name
+     *
+	 * @param VirtualColumn $column Virtual column object
+	 *
+     * @return string a foreign key name
+     */
+	static function createForeignName (VirtualColumn $column) : string {
+		//Get data from the column
+		$attributes 		= (object)$column->attributes()->foreign;
+		$foreignkeycolumn 	= $column->name();
+		$targettable 		= $attributes->table;
+		$targetcolumn 		= $attributes->id;
+
+		//Name build
+		return $foreignkeycolumn."_".$column->table()."_".$targettable."_".$targetcolumn;
+	}
 
     /**
      * Returns a raw DB string that can be used as a query string
@@ -79,7 +96,7 @@ trait ConstraintSyntax {
 			if (isset($attributes->name) && !is_null($attributes->name))
 				$foreignname = $attributes->name;
 			else
-				$foreignname = "_fc_".$foreignkeycolumn."_ft_".$tablename."_tt_".$targettable."_tc_".$targetcolumn;
+				$foreignname = static::createForeignName($column);
 		}
 
 		//Build

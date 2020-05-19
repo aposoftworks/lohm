@@ -132,9 +132,11 @@ class LOHM {
             DB::connection($data["conn"])->statement($data["query"]);
 		}
 		//Change index/foreign
-		else if ($data["type"] == "alter") {
+		else if ($data["type"] == "constraint") {
 			//Check if its necessary
-            DB::connection($data["conn"])->statement($data["query"]);
+			if (!count(DB::select(SyntaxLibrary::checkIndex($data["column"], $data["table"]->name())))) {
+            	DB::connection($data["conn"])->statement($data["query"]);
+			}
 		}
 		//Table columns
         else if ($data["type"] == "createtable") {
@@ -155,11 +157,14 @@ class LOHM {
     }
 
     private function enqueuer ($queue, $table, $queryType) {
-		$query = ["conn" => $this->connection, "table" => $table, "type" => ($queryType === "_queues" ? "createtable":"alter")];
+		$query = ["conn" => $this->connection, "table" => $table, "type" => ($queryType === "_queues" ? "createtable":"constraint")];
 
         if (is_array($queue)) {
             for ($i = 0; $i < count($queue); $i++) {
-                $this->$queryType[] = $query + ["query" => $queue[$i]];
+				foreach ($queue[$i] as $key => $value) {
+					if ($value !== "" && $key !== "column")
+						$this->$queryType[] = $query + ["query" => $value, "constraint" => $key, "column" => $queue[$i]["column"]];
+				}
             }
         }
         else {

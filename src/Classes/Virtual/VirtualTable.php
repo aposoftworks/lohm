@@ -118,11 +118,7 @@ class VirtualTable implements ToRawQuery, ComparableVirtual, Jsonable, Arrayable
         $queryColumns = [];
 
         for ($i = 0; $i < count($this->_columns); $i++) {
-            $query = $this->_columns[$i]->toLateQuery();
-
-            for ($x = 0; $x < count($query);$x++) {
-                if ($query[$x] !== "") $queryColumns[] = $query[$x];
-            }
+			$queryColumns[] = $this->_columns[$i]->toLateQuery();
         }
 
         return $queryColumns;
