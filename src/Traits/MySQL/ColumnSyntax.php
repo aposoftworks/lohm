@@ -46,10 +46,11 @@ trait ColumnSyntax {
      * Returns a syntax for handling a column
      *
 	 * @param VirtualColumn $column The virtual column
+	 * @param bool $creation The creation method will allow insertion of constraints
 	 *
      * @return string the column complete syntax
      */
-	public static function column (VirtualColumn $column) : string {
+	public static function column (VirtualColumn $column, bool $creation = false) : string {
 		//Get data
 		$attributes = $column->attributes();
 		$name       = $column->name();
@@ -69,6 +70,10 @@ trait ColumnSyntax {
 		//Default
 		if (isset($attributes->default))
 			$response .= " DEFAULT '$attributes->default'";
+
+		//Primary key only will be added if on creation method
+		if ($creation && $attributes->primary)
+			$response .= " PRIMARY KEY";
 
 		//Sanitization
 		$response = preg_replace("/\s+/", " ", $response);

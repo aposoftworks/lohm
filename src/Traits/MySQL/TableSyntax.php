@@ -25,7 +25,7 @@ trait TableSyntax {
 
 		   //Stringify all columns
 		   for ($i = 0; $i < count($rawcolumns); $i++) {
-			   $columns[] = static::column($rawcolumns[$i]);
+			   $columns[] = static::column($rawcolumns[$i], true);
 		   }
 	   }
 

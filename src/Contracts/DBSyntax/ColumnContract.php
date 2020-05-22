@@ -10,10 +10,11 @@ interface ColumnContract {
      * Returns a syntax for handling a column
      *
 	 * @param VirtualColumn $column The column virtual object
+	 * @param bool $creation The creation method will allow insertion of constraints
 	 *
      * @return string the column complete syntax
      */
-	static function column (VirtualColumn $column) : string;
+	static function column (VirtualColumn $column, bool $creation = false) : string;
 
     /**
      * Returns a syntax for handling a column type
