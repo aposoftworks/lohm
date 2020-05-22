@@ -72,7 +72,7 @@ trait ColumnSyntax {
 			$response .= " DEFAULT '$attributes->default'";
 
 		//Primary key only will be added if on creation method
-		if ($creation && $attributes->primary)
+		if ($creation && isset($attributes->primary))
 			$response .= " PRIMARY KEY";
 
 		//Sanitization
