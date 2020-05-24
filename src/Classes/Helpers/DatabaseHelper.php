@@ -349,9 +349,9 @@ class DatabaseHelper {
         }
 
         //Only run if there are actual changes
-        if (count($queries) > 0)
-            return "ALTER TABLE ".$current->name()." ".implode(", ", $queries);
+		if (count($queries) > 0)
+			return array_map(function ($query) use ($current) { return "ALTER TABLE ".$current->name()." ".$query; }, $queries);
         else
-            return "";
+            return [];
     }
 }

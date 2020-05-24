@@ -66,7 +66,7 @@ class MigrateCommand extends Command {
         LOHM::migrate()->each(function ($migration) {
             $update = $migration();
 
-            $this->queries ++;
+            $this->queries += $update;
 		});
 
         $this->line("");

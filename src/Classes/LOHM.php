@@ -129,35 +129,40 @@ class LOHM {
 		//Drop a table
 		if ($data["type"] == "droptable") {
             //Insert all of it
-            DB::connection($data["conn"])->statement($data["query"]);
+            return DB::connection($data["conn"])->statement($data["query"]);
 		}
 		//Change index/foreign
 		else if ($data["type"] == "constraint") {
 			//Check if its necessary
 			if (!count(DB::select(SyntaxLibrary::checkConstraint($data["column"], $data["table"]->name())))) {
-            	DB::connection($data["conn"])->statement($data["query"]);
+            	return DB::connection($data["conn"])->statement($data["query"]);
 			}
 		}
 		//Table columns
-        else if ($data["type"] == "createtable") {
+        else if ($data["type"] == "table") {
             //Update table
             if (LOHM::conn($data["conn"])->existsTable($tablename)) {
                 $connection     = config("database.connections.".$data["conn"].".database");
                 $currenttable   = VirtualTable::fromDatabase($connection, $tablename);
 				$changes        = DatabaseHelper::changesNeeded($currenttable, $data["table"]);
 
-                if ($changes !== "")
-                    DB::connection($data["conn"])->statement($changes);
+                if (count($changes) != 0) {
+					for ($i = 0; $i < count($changes); $i++) {
+						return DB::connection($data["conn"])->statement($changes[$i]);
+					}
+				}
+
+				return 0;
             }
             //Create table
             else {
-                DB::connection($data["conn"])->statement($data["query"]);
+                return DB::connection($data["conn"])->statement($data["query"]);
             }
         }
     }
 
     private function enqueuer ($queue, $table, $queryType) {
-		$query = ["conn" => $this->connection, "table" => $table, "type" => ($queryType === "_queues" ? "createtable":"constraint")];
+		$query = ["conn" => $this->connection, "table" => $table, "type" => ($queryType === "_queues" ? "table":"constraint")];
 
         if (is_array($queue)) {
             for ($i = 0; $i < count($queue); $i++) {
