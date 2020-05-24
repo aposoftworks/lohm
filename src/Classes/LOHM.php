@@ -12,11 +12,16 @@ use Aposoftworks\LOHM\Classes\Concrete\ConcreteTable;
 use Aposoftworks\LOHM\Classes\Helpers\DatabaseHelper;
 
 class LOHM {
+	//General
     protected $method;
     protected $connection;
 
-    protected $_queues        = [];
-    protected $_latequeues    = [];
+	//Queries
+    protected $_queues        	= [];
+	protected $_latequeues    	= [];
+
+	//Static
+	protected static $classes 	= [];
 
     //-------------------------------------------------
     // Main methods
@@ -74,14 +79,22 @@ class LOHM {
     //-------------------------------------------------
 
     public function queue ($filepath, $method = "up") {
-        $this->method = $method;
+		$this->method = $method;
 
-        //Actually require
-		require $filepath;
+		if (isset(static::$classes[$filepath])) {
+			$class = static::$classes[$filepath];
+		}
+		else {
+			//Actually require
+			require_once $filepath;
 
-		//Get class name
-		$classes 	= get_declared_classes();
-		$class 		= end($classes);
+			//Get class name
+			$classes 	= get_declared_classes();
+			$class 		= end($classes);
+
+			//Set class
+			static::$classes[$filepath] = $class;
+		}
 
         //Instanceit
         $class = new $class();
