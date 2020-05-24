@@ -70,7 +70,11 @@ class ConcreteColumn extends VirtualColumn {
 
         //Always return self for concatenation
         return $this;
-    }
+	}
+
+	public function comment ($text) {
+		$this->attributes->comment = $text;
+	}
 
     //-------------------------------------------------
     // Foreign types

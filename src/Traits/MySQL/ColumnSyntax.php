@@ -75,6 +75,10 @@ trait ColumnSyntax {
 		if ($creation && isset($attributes->primary))
 			$response .= " PRIMARY KEY";
 
+		//Comments
+		if (isset($attributes->comment))
+			$response .= " COMMENT '$attributes->comment";
+
 		//Sanitization
 		$response = preg_replace("/\s+/", " ", $response);
 		$response = trim($response);
