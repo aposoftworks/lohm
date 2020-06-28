@@ -38,8 +38,8 @@ class DatabaseHelper {
 		$columns 		= [];
 
 		//Matches
-		preg_match("/\((.|\n)+\)/", $string, $statements);
-		preg_match_all("/.+\n/", $statements[0], $string_columns);
+		preg_match_all("/\(.+\)/s", $string, $statements);
+		preg_match_all("/.+\n/", $statements[0][0], $string_columns);
 
 		//Remove empty first line
 		array_shift($string_columns[0]);
